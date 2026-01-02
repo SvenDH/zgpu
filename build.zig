@@ -120,14 +120,7 @@ pub fn build(b: *std.Build) void {
     });
     b.installArtifact(zdawn);
 
-    linkSystemDeps(b, zdawn);
-    addLibraryPathsTo(zdawn);
-
-    zdawn.linkSystemLibrary("dawn");
-    zdawn.linkLibC();
-    if (target.result.abi != .msvc)
-        zdawn.linkLibCpp();
-
+    // Note: Don't linkSystemLibrary("dawn") here - it will be linked by the final exe
     zdawn.addIncludePath(b.path("libs/dawn/include"));
     zdawn.addIncludePath(b.path("src"));
 
@@ -139,6 +132,10 @@ pub fn build(b: *std.Build) void {
         .file = b.path("src/dawn_proc.c"),
         .flags = &.{"-fno-sanitize=undefined"},
     });
+
+    zdawn.linkLibC();
+    if (target.result.abi != .msvc)
+        zdawn.linkLibCpp();
 
     const test_step = b.step("test", "Run zgpu tests");
 
@@ -154,7 +151,6 @@ pub fn build(b: *std.Build) void {
     tests.addIncludePath(b.path("libs/dawn/include"));
     tests.linkLibrary(zdawn);
     linkSystemDeps(b, tests);
-    addLibraryPathsTo(tests);
     b.installArtifact(tests);
 
     test_step.dependOn(&b.addRunArtifact(tests).step);
